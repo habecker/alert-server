@@ -17,7 +17,7 @@ COPY --from=builder /build/dist/ /dist/
 
 COPY entrypoint.sh /entrypoint.sh
 
-RUN sh -c "pip install /dist/alert-server-*.whl"
+RUN sh -c "pip install /dist/alert_server-*.whl"
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
