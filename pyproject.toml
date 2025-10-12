@@ -3,7 +3,12 @@ name = "alert-server"
 version = "0.1.0.dev0"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fastapi[standard]>=0.119.0", "tinydb>=4.8.2"]
+dependencies = [
+    "fastapi[standard]>=0.119.0",
+    "redis>=6.4.0",
+    "tinydb>=4.8.2",
+    "uvicorn>=0.37.0",
+]
 
 [tool.uv]
 package = true

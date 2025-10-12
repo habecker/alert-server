@@ -6,6 +6,8 @@ from typing import Any, TypeVar
 class EnvironmentKeys(StrEnum):
     AUTH_STORE_DIR = "AUTH_STORE_DIR"
     STAGE = "STAGE"
+    REDIS_HOST = "REDIS_HOST"
+    REDIS_PORT = "REDIS_PORT"
 
 
 _REQUIRED_ENVIRONMENT_KEYS = []

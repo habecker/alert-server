@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, Security
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 
+from alert.alert.adapter import router as alert_router
 from alert.core.adapter import verify_token
 from alert.infrastructure.environment import environment
 
@@ -22,6 +23,8 @@ else:
             Security(security),
         ],
     )
+
+app.include_router(alert_router)
 
 
 @app.middleware("http")
