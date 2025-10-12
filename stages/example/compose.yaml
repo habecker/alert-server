@@ -1,0 +1,25 @@
+services:
+  alert:
+    image: ghcr.io/habecker/alert-server:latest
+    environment:
+      AUTH_STORE_DIR: ${AUTH_STORE_DIR}
+      STAGE: ${STAGE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - alert:/data
+    labels:
+      stage: ${STAGE}
+
+  valkey:
+    image: valkey/valkey:9.0
+    volumes:
+      - valkey:/data
+    labels:
+      stage: ${STAGE}
+
+volumes:
+  valkey:
+  alert:
