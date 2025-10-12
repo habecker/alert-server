@@ -48,36 +48,26 @@ Note: Ensure `AUTH_STORE_DIR` exists before running (e.g., `mkdir -p data/auth`)
 
 ## Quickstart (Local)
 
-1) Start Valkey (Redis-compatible) locally using Docker Compose:
+1. Start Valkey (Redis-compatible) locally using Docker Compose:
 
 ```bash
 docker compose up -d
 ```
 
-2) Copy the example env and adjust if needed:
+2. Copy the example env and adjust if needed:
 
 ```bash
 cp .env.example .env
 mkdir -p data/auth
 ```
 
-3) Install dependencies and run the server.
+3. Install dependencies and run the server.
 
 Using uv (recommended):
 
 ```bash
 uv sync
 uv run python -m alert.app
-```
-
-Using pip + venv:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install -e .
-python -m alert.app
 ```
 
 The API listens on `http://localhost:8080`.
@@ -108,9 +98,11 @@ Implementation details:
 All requests must include `Authorization: Bearer <API_KEY>`.
 
 - `GET /health`
+
   - Returns `{"status":"ok"}` for basic service health.
 
 - `PUT /alerts`
+
   - Body: `{"message": "...", "level": "info|warn|error", "metadata": { ... }}`
   - Stores the latest alert with a TTL (30 minutes) and publishes to the SSE channel.
   - Response: `{"status": "alert stored", "alert": { ... }}`
@@ -157,24 +149,8 @@ curl -H "Authorization: Bearer $API_KEY" http://localhost:8080/health
 - Run app: `python -m alert.app` (or `uv run python -m alert.app`).
 - Create API key: `python -m alert.create_api_key -u <username>`.
 
-## Testing and Tooling
-
-Dev dependencies are specified in `pyproject.toml` (`ruff`, `pytest`, `basedpyright`, etc.). Typical flows:
-
-```bash
-uv sync --all-extras --dev
-uv run ruff check .
-uv run basedpyright
-uv run pytest -q
-```
-
 ## Production Considerations
 
 - Set `STAGE=prod` to disable docs and OpenAPI.
 - Run behind a reverse proxy and terminate TLS at the edge.
 - Provide a managed Redis/Valkey and secure network access to it.
-- Rotate API keys per user periodically; expose revocation endpoints if needed.
-
-## License
-
-Add your chosen license here.
