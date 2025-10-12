@@ -13,7 +13,7 @@ FastAPI-based alert broadcasting service with server-sent events (SSE), Redis/Va
 ## Architecture
 
 - `FastAPI` app at `src/alert/app.py`.
-- `PUT /alerts` stores and publishes alerts; `GET /alerts` streams alerts via SSE.
+- `PUT /alerts` or `POST /alerts` stores and publishes alerts; `GET /alerts` streams alerts via SSE.
 - `Redis/Valkey` used for pub/sub and for caching the latest alert.
 - `TinyDB` stores users and API keys under `AUTH_STORE_DIR`.
 - Simple auth middleware verifies a Bearer token (custom API key) on every request.
