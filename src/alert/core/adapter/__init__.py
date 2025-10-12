@@ -6,9 +6,7 @@ from alert.core.application import auth
 security = HTTPBearer()  # parses the Authorization header for you
 
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-
+def verify_token(token: str):
     user_info = auth.validate(token)
     if not user_info:
         raise HTTPException(

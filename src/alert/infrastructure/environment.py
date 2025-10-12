@@ -5,6 +5,7 @@ from typing import Any, TypeVar
 
 class EnvironmentKeys(StrEnum):
     AUTH_STORE_DIR = "AUTH_STORE_DIR"
+    STAGE = "STAGE"
 
 
 _REQUIRED_ENVIRONMENT_KEYS = []
