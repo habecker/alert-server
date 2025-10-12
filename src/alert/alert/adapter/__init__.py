@@ -23,6 +23,7 @@ class AlertInfo(BaseModel):
     received_at: datetime
 
 
+@router.post("/alerts")
 @router.put("/alerts")
 async def put_alert(alert: Alert):
     alert_data = {
