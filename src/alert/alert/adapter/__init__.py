@@ -25,7 +25,12 @@ class AlertInfo(BaseModel):
 
 @router.post("/alerts")
 @router.put("/alerts")
-async def put_alert(alert: Alert):
+@router.post("/alerts/{group_name}")
+@router.put("/alerts/{group_name}")
+async def put_alert(
+    alert: Alert,
+    group_name: str = "default",
+):
     alert_data = {
         "data": alert,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -33,16 +38,19 @@ async def put_alert(alert: Alert):
 
     await redis.set(ALERT_KEY, json.dumps(alert_data), ex=ALERT_TTL_MINUTES * 60)
 
-    await redis.publish(ALERT_CHANNEL, json.dumps(alert_data))
+    await redis.publish(ALERT_CHANNEL + "-" + group_name, json.dumps(alert_data))
 
     return {"status": "alert stored", "alert": alert}
 
 
 @router.get("/alerts")
-async def get_alerts(request: Request):
+@router.get("/alerts/{group_name}")
+async def get_alerts(request: Request, group_name="default"):
     async def event_generator():
+        HEARTBEAT_INTERVAL_SECONDS = 15
         pubsub = redis.pubsub()
-        await pubsub.subscribe(ALERT_CHANNEL)
+        channel = ALERT_CHANNEL + "-" + group_name
+        await pubsub.subscribe(channel)
 
         last_alert_json = await redis.get(ALERT_KEY)
         if last_alert_json:
@@ -54,24 +62,43 @@ async def get_alerts(request: Request):
                 alert_info = AlertInfo(
                     data=alert_data["data"], received_at=alert_data["timestamp"]
                 )
-                yield json.dumps(alert_info.model_dump(mode="json"))
+                payload = json.dumps(alert_info.model_dump(mode="json"))
+                # SSE frame with data line and terminating blank line
+                yield f"data: {payload}\n\n"
 
         try:
-            async for message in pubsub.listen():
-                if message["type"] != "message":
-                    continue
-
+            # Poll for messages with timeout to allow heartbeat
+            while True:
                 # Stop if client disconnects
                 if await request.is_disconnected():
                     break
 
+                message = await pubsub.get_message(
+                    ignore_subscribe_messages=True, timeout=HEARTBEAT_INTERVAL_SECONDS
+                )
+
+                if message is None:
+                    # Heartbeat comment to keep connection alive (ignored by clients)
+                    yield ": keep-alive\n\n"
+                    continue
+
+                if message.get("type") != "message":
+                    continue
+
                 data = message["data"]
                 data = json.loads(data)
                 alert_info = AlertInfo(data=data["data"], received_at=data["timestamp"])
-                yield json.dumps(alert_info.model_dump(mode="json")) + "\n"
+                payload = json.dumps(alert_info.model_dump(mode="json"))
+                yield f"data: {payload}\n\n"
 
         finally:
-            await pubsub.unsubscribe(ALERT_CHANNEL)
+            await pubsub.unsubscribe(channel)
             await pubsub.close()
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    # Add standard SSE headers to prevent buffering and caching
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
