@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 
+from click import group
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -36,7 +37,9 @@ async def put_alert(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    await redis.set(ALERT_KEY, json.dumps(alert_data), ex=ALERT_TTL_MINUTES * 60)
+    await redis.set(
+        ALERT_KEY + "-" + group_name, json.dumps(alert_data), ex=ALERT_TTL_MINUTES * 60
+    )
 
     await redis.publish(ALERT_CHANNEL + "-" + group_name, json.dumps(alert_data))
 
@@ -52,7 +55,7 @@ async def get_alerts(request: Request, group_name="default"):
         channel = ALERT_CHANNEL + "-" + group_name
         await pubsub.subscribe(channel)
 
-        last_alert_json = await redis.get(ALERT_KEY)
+        last_alert_json = await redis.get(ALERT_KEY + "-" + group_name)
         if last_alert_json:
             alert_data = json.loads(last_alert_json)
             timestamp = datetime.fromisoformat(alert_data["timestamp"])
@@ -101,4 +104,6 @@ async def get_alerts(request: Request, group_name="default"):
         "Connection": "keep-alive",
         "X-Accel-Buffering": "no",
     }
-    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
+    return StreamingResponse(
+        event_generator(), media_type="text/event-stream", headers=headers
+    )
