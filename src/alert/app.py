@@ -35,10 +35,15 @@ async def auth_middleware(request: Request, call_next):
             return await call_next(request)
 
     auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    token: str | None = None
 
-    token = auth_header.split(" ", 1)[1]
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+    else:
+        token = request.query_params.get("token")
+
+    if not token:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
 
     user_info = verify_token(token)
 

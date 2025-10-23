@@ -1,6 +1,7 @@
 import base64
 import datetime
 import hashlib
+import hmac
 import os
 import secrets
 import uuid
@@ -60,7 +61,10 @@ class ApiKey(pydantic.BaseModel):
         return password
 
     def validate_api_key(self, api_key: ApiKeySecret) -> bool:
-        return self.hash == self._hash(api_key)
+        assert self.hash, "Cannot validate an empty api key"
+
+        computed = self._hash(api_key)
+        return hmac.compare_digest(self.hash, computed)
 
 
 class ApiUser(pydantic.BaseModel):
