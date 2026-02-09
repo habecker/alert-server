@@ -46,6 +46,24 @@ async def put_alert(
     return {"status": "alert stored", "alert": alert}
 
 
+@router.get("/alerts/{group_name}/trigger")
+async def get_trigger_alert(
+    group_name: str,
+):
+    alert_data = {
+        "data": {},
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await redis.set(
+        ALERT_KEY + "-" + group_name, json.dumps(alert_data), ex=ALERT_TTL_MINUTES * 60
+    )
+
+    await redis.publish(ALERT_CHANNEL + "-" + group_name, json.dumps(alert_data))
+
+    return {"status": "alert stored"}
+
+
 @router.get("/alerts")
 @router.get("/alerts/{group_name}")
 async def get_alerts(request: Request, group_name="default"):
